@@ -146,7 +146,7 @@ public final class Papyrus {
         /**
          * Command builder for the command.
          */
-        public final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command = LiteralArgumentBuilder.literal("");
+        public final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command;
 
         /**
          * Creates new command builder.
@@ -165,6 +165,7 @@ public final class Papyrus {
          */
         public Command(@NotNull String label) {
             this.label = Preconditions.checkNotNull(label, "Command label can not be null");
+            command = LiteralArgumentBuilder.literal(label);
         }
 
         private CommandDispatcher<BukkitBrigadierCommandSource> dispatcher;
@@ -180,7 +181,7 @@ public final class Papyrus {
 
         private LiteralCommandNode<BukkitBrigadierCommandSource> getBrigadier() {
             if (brigadier != null) return brigadier;
-            brigadier = buildRedirect(label, command.build());
+            brigadier = command.build();
             return brigadier;
         }
 
