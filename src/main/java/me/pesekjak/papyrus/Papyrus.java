@@ -91,8 +91,7 @@ public final class Papyrus {
      * <p>
      * You can create your own commands as such:
      * <pre>
-     * Command cmd = new Command() {{
-     *     label = "hello";
+     * Command cmd = new Command("hello") {{
      *     aliases = new String[] { "world" };
      *     description = "My custom command";
      *     command.executes(context -> {
