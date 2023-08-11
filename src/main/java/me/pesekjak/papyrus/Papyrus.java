@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * @see Command
  * @see CommandBuilder
  */
-public final class Papyrus implements Listener {
+public final class Papyrus {
 
     private final JavaPlugin plugin;
     private final String fallback;
@@ -51,7 +51,7 @@ public final class Papyrus implements Listener {
         Preconditions.checkNotNull(plugin, "Papyrus requires a plugin instance to initialized");
         this.plugin = plugin;
         fallback = plugin.getName().toLowerCase(java.util.Locale.ENGLISH).trim();
-        Bukkit.getPluginManager().registerEvents(this, plugin);
+        Bukkit.getPluginManager().registerEvents(new Listeners(), plugin);
     }
 
     /**
@@ -108,32 +108,32 @@ public final class Papyrus implements Listener {
         /**
          * Label of the command.
          */
-        final String label;
+        public final String label;
 
         /**
          * Aliases of the command.
          */
-        String @Nullable [] aliases;
+        public String @Nullable [] aliases;
 
         /**
          * Description of the command.
          */
-        @Nullable String description;
+        public @Nullable String description;
 
         /**
          * Usage message of the command.
          */
-        @Nullable String usageMessage;
+        public @Nullable String usageMessage;
 
         /**
          * Permission of the command.
          */
-        @Nullable String permission;
+        public @Nullable String permission;
 
         /**
          * Permission message of the command.
          */
-        @Nullable Component permissionMessage;
+        public @Nullable Component permissionMessage;
 
         /**
          * Consumer that is accepted in case the command execution fails due to syntax exception.
@@ -141,12 +141,12 @@ public final class Papyrus implements Listener {
          * In case the listener is not set and the command execution fails,
          * false is return at {@link org.bukkit.command.Command#execute(CommandSender, String, String[])}
          */
-        @Nullable BiConsumer<BukkitBrigadierCommandSource, CommandSyntaxException> syntaxExceptionListener;
+        public @Nullable BiConsumer<BukkitBrigadierCommandSource, CommandSyntaxException> syntaxExceptionListener;
 
         /**
          * Command builder for the command.
          */
-        final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command = LiteralArgumentBuilder.literal("");
+        public final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command = LiteralArgumentBuilder.literal("");
 
         /**
          * Creates new command builder.
@@ -318,43 +318,47 @@ public final class Papyrus implements Listener {
 
     }
 
-    @EventHandler
-    @SuppressWarnings("UnstableApiUsage")
-    private void onCommandRegistered(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
-        Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(event.getCommand().getLabel())).findAny().orElse(null);
-        if (command == null) return;
-        event.setRawCommand(true);
-        event.setLiteral(buildRedirect(event.getCommandLabel(), command.getBrigadier()));
-    }
+    class Listeners implements Listener {
 
-    @EventHandler
-    private void onPlayerSendSuggestionsEvent(AsyncPlayerSendSuggestionsEvent event) {
-        String buffer = event.getBuffer();
-        String[] parts = buffer.split(" ");
-
-        String commandName = parts[0].substring(1);
-        String label = Optional.ofNullable(Bukkit.getCommandMap().getCommand(commandName)).map(org.bukkit.command.Command::getLabel).orElse(null);
-
-        if (label == null) return;
-
-        Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(label)).findAny().orElse(null);
-        if (command == null) return;
-
-        BukkitBrigadierCommandSource source = new CommandSourceWrapper(event.getPlayer());
-        String toParse = label + buffer.substring(parts[0].length());
-        ParseResults<BukkitBrigadierCommandSource> parseResults = command.getDispatcher().parse(toParse, source);
-
-        try {
-            Suggestions suggestions = command.getDispatcher().getCompletionSuggestions(parseResults).get();
-            event.setSuggestions(new Suggestions(StringRange.at(buffer.length()), suggestions.getList()));
-        } catch (Exception exception) {
-            event.setCancelled(true);
+        @EventHandler
+        @SuppressWarnings("UnstableApiUsage")
+        private void onCommandRegistered(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
+            Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(event.getCommand().getLabel())).findAny().orElse(null);
+            if (command == null) return;
+            event.setRawCommand(true);
+            event.setLiteral(buildRedirect(event.getCommandLabel(), command.getBrigadier()));
         }
-    }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    private void onAsyncTabComplete(AsyncTabCompleteEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> event.setHandled(true));
+        @EventHandler
+        private void onPlayerSendSuggestionsEvent(AsyncPlayerSendSuggestionsEvent event) {
+            String buffer = event.getBuffer();
+            String[] parts = buffer.split(" ");
+
+            String commandName = parts[0].substring(1);
+            String label = Optional.ofNullable(Bukkit.getCommandMap().getCommand(commandName)).map(org.bukkit.command.Command::getLabel).orElse(null);
+
+            if (label == null) return;
+
+            Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(label)).findAny().orElse(null);
+            if (command == null) return;
+
+            BukkitBrigadierCommandSource source = new CommandSourceWrapper(event.getPlayer());
+            String toParse = label + buffer.substring(parts[0].length());
+            ParseResults<BukkitBrigadierCommandSource> parseResults = command.getDispatcher().parse(toParse, source);
+
+            try {
+                Suggestions suggestions = command.getDispatcher().getCompletionSuggestions(parseResults).get();
+                event.setSuggestions(new Suggestions(StringRange.at(buffer.length()), suggestions.getList()));
+            } catch (Exception exception) {
+                event.setCancelled(true);
+            }
+        }
+
+        @EventHandler(priority = EventPriority.MONITOR)
+        private void onAsyncTabComplete(AsyncTabCompleteEvent event) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> event.setHandled(true));
+        }
+
     }
 
     private static <T> LiteralCommandNode<T> buildRedirect(final String alias, final LiteralCommandNode<T> destination) {
