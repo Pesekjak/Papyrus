@@ -107,32 +107,32 @@ public final class Papyrus {
         /**
          * Label of the command.
          */
-        public final String label;
+        protected final String label;
 
         /**
          * Aliases of the command.
          */
-        public String @Nullable [] aliases;
+        protected String @Nullable [] aliases;
 
         /**
          * Description of the command.
          */
-        public @Nullable String description;
+        protected @Nullable String description;
 
         /**
          * Usage message of the command.
          */
-        public @Nullable String usageMessage;
+        protected @Nullable String usageMessage;
 
         /**
          * Permission of the command.
          */
-        public @Nullable String permission;
+        protected @Nullable String permission;
 
         /**
          * Permission message of the command.
          */
-        public @Nullable Component permissionMessage;
+        protected @Nullable Component permissionMessage;
 
         /**
          * Consumer that is accepted in case the command execution fails due to syntax exception.
@@ -140,12 +140,12 @@ public final class Papyrus {
          * In case the listener is not set and the command execution fails,
          * false is return at {@link org.bukkit.command.Command#execute(CommandSender, String, String[])}
          */
-        public @Nullable BiConsumer<BukkitBrigadierCommandSource, CommandSyntaxException> syntaxExceptionListener;
+        protected @Nullable BiConsumer<BukkitBrigadierCommandSource, CommandSyntaxException> syntaxExceptionListener;
 
         /**
          * Command builder for the command.
          */
-        public final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command;
+        protected final LiteralArgumentBuilder<BukkitBrigadierCommandSource> command;
 
         /**
          * Creates new command builder.
@@ -165,6 +165,48 @@ public final class Papyrus {
         public Command(@NotNull String label) {
             this.label = Preconditions.checkNotNull(label, "Command label can not be null");
             command = LiteralArgumentBuilder.literal(label);
+        }
+
+        /**
+         * @return label of the command
+         */
+        public String getLabel() {
+            return label;
+        }
+
+        /**
+         * @return aliases of the command
+         */
+        public String[] getAliases() {
+            return aliases != null ? aliases.clone() : new String[0];
+        }
+
+        /**
+         * @return description of the command
+         */
+        public @Nullable String getDescription() {
+            return description;
+        }
+
+        /**
+         * @return usage message of the command
+         */
+        public @Nullable String getUsageMessage() {
+            return usageMessage;
+        }
+
+        /**
+         * @return permission of the command
+         */
+        public @Nullable String getPermission() {
+            return permission;
+        }
+
+        /**
+         * @return permission message of the command
+         */
+        public @Nullable Component getPermissionMessage() {
+            return permissionMessage;
         }
 
         private CommandDispatcher<BukkitBrigadierCommandSource> dispatcher;
@@ -187,14 +229,13 @@ public final class Papyrus {
         private org.bukkit.command.Command getBukkit() {
             if (bukkit != null) return bukkit;
 
-            String description = this.description != null ? this.description : "";
-            String usageMessage = this.usageMessage != null ? this.usageMessage : "/" + label;
-            List<String> aliases = this.aliases != null ? List.of(this.aliases) : Collections.emptyList();
+            String description = getDescription() != null ? getDescription() : "";
+            String usageMessage = getUsageMessage() != null ? getUsageMessage() : "/" + getLabel();
 
-            bukkit = new org.bukkit.command.Command(label, description, usageMessage, aliases) {
+            bukkit = new org.bukkit.command.Command(getLabel(), description, usageMessage, List.of(getAliases())) {
                 @Override
                 public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String[] args) {
-                    String fullCommand = label + (args.length != 0 ? " " + String.join(" ", args) : "");
+                    String fullCommand = Command.this.getLabel() + (args.length != 0 ? " " + String.join(" ", args) : "");
                     BukkitBrigadierCommandSource source = new CommandSourceWrapper(sender);
                     try {
                         getDispatcher().execute(fullCommand, source);
@@ -207,8 +248,8 @@ public final class Papyrus {
                 }
             };
 
-            bukkit.setPermission(permission);
-            bukkit.permissionMessage(permissionMessage);
+            bukkit.setPermission(getPermission());
+            bukkit.permissionMessage(getPermissionMessage());
             return bukkit;
         }
 
@@ -323,7 +364,7 @@ public final class Papyrus {
         @EventHandler
         @SuppressWarnings("UnstableApiUsage")
         private void onCommandRegistered(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
-            Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(event.getCommand().getLabel())).findAny().orElse(null);
+            Command command = commands.stream().filter(c -> c.getLabel().equalsIgnoreCase(event.getCommand().getLabel())).findAny().orElse(null);
             if (command == null) return;
             event.setRawCommand(true);
             event.setLiteral(buildRedirect(event.getCommandLabel(), command.getBrigadier()));
@@ -339,7 +380,7 @@ public final class Papyrus {
 
             if (label == null) return;
 
-            Command command = commands.stream().filter(c -> c.label.equalsIgnoreCase(label)).findAny().orElse(null);
+            Command command = commands.stream().filter(c -> c.getLabel().equalsIgnoreCase(label)).findAny().orElse(null);
             if (command == null) return;
 
             BukkitBrigadierCommandSource source = new CommandSourceWrapper(event.getPlayer());
@@ -374,13 +415,12 @@ public final class Papyrus {
 
     private static Collection<String> getAllLabels(String fallback, Command command) {
         List<String> labels = new ArrayList<>();
-        labels.add(command.label);
-        labels.add(fallback + ":" + command.label);
-        if (command.aliases != null)
-            Arrays.stream(command.aliases).forEach(alias -> {
-                labels.add(alias);
-                labels.add(fallback + ":" + alias);
-            });
+        labels.add(command.getLabel());
+        labels.add(fallback + ":" + command.getLabel());
+        Arrays.stream(command.getAliases()).forEach(alias -> {
+            labels.add(alias);
+            labels.add(fallback + ":" + alias);
+        });
         return labels.stream().map(label -> label.toLowerCase(Locale.ENGLISH).trim()).toList();
     }
 
