@@ -402,13 +402,13 @@ public final class Papyrus {
 
     }
 
-    private static <T> LiteralCommandNode<T> buildRedirect(final String alias, final LiteralCommandNode<T> destination) {
-        final LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder
+    private static <T> LiteralCommandNode<T> buildRedirect(String alias, LiteralCommandNode<T> destination) {
+        LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder
                 .<T>literal(alias.toLowerCase())
                 .requires(destination.getRequirement())
                 .forward(destination.getRedirect(), destination.getRedirectModifier(), destination.isFork())
                 .executes(destination.getCommand());
-        for (final CommandNode<T> child : destination.getChildren())
+        for (CommandNode<T> child : destination.getChildren())
             builder.then(child);
         return builder.build();
     }
