@@ -73,6 +73,7 @@ repositories {
 }
 
 dependencies {
+    implementation("io.papermc.paper:paper-api:VERSION")
     implementation("io.papermc.paper:paper-mojangapi:VERSION")
     implementation("com.mojang:brigadier:VERSION")
 }
