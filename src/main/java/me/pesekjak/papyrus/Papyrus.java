@@ -389,7 +389,9 @@ public final class Papyrus {
 
             try {
                 Suggestions suggestions = command.getDispatcher().getCompletionSuggestions(parseResults).get();
-                event.setSuggestions(new Suggestions(StringRange.at(buffer.length()), suggestions.getList()));
+                int diff = commandName.length() - label.length() + 1; // +1 for '/'
+                StringRange range = new StringRange(suggestions.getRange().getStart() + diff, suggestions.getRange().getEnd() + diff);
+                event.setSuggestions(new Suggestions(range, suggestions.getList()));
             } catch (Exception exception) {
                 event.setCancelled(true);
             }
